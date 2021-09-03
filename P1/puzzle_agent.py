@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 from enum import Enum, unique, auto
 from typing import Tuple, List, Callable, Any
-import random
+import random, math
 
 from lib.priority_queue import PriorityQueue
+
 
 @unique
 class Actions(Enum):
@@ -45,14 +46,14 @@ class State:
 @dataclass (order=True)
 class SearchNode:
     # moves represents the number of tile moved to arrive at the current state
-    moves: int = field(compare=False)
+    depth: int = field(compare=False)
     # cost represents the total cost of the node (moves + hueristic(state))
     cost: int = field(compare=True)
     #current state
     state: State = field(comapre=False)
     # action enacted on parent in order to arrive at the current state
     action: Actions = field(compare=False, default=None)
-    # previous state
+    # previous state, used so we can backtrack after finding the solution
     parent: Any = field(compare=False, default=None)
 
 
@@ -61,6 +62,7 @@ class SearchNode:
 def calculate_state(action: Actions, state: State) -> State:
     blank_idx = state.blank_idx
 
+    # calculate the bounds
     is_on_left = blank_idx == 0 or blank_idx == 3 or blank_idx == 6
     is_on_right = blank_idx == 2 or blank_idx == 5 or blank_idx == 8
     is_on_top = blank_idx == 0 or blank_idx == 1 or blank_idx == 2
@@ -188,3 +190,52 @@ class PuzzleAgent:
             for j in range(3):
                 print(self.state.state[3 * i + j] +  " ", end="")
             print("")
+
+
+# O(1) complexity with a fixed size
+# O(n) for NxN puzzles
+def h1_hueristic(goal_state: State, state: State) -> int:
+    sum = 0
+
+    # TODO: does this need to be divided by 2?
+    for g, s in zip(goal_state.state, state.state):
+        if not g == s:
+            sum += 1
+    return sum
+
+# O(1) complexity for fixed size
+# O(n^2) for NxN puzzles
+# TODO: can this be optimized? I dont think I can do better than n^2 since
+# there isnt any ordering. Maybe somthing with a hashtable? Doesnt matter for now
+def h2_hueristic(goal_state: State, state: State) -> int:
+    sum = 0
+
+    # loop through every element in the goal state
+    for i in range(0, 9):
+        # goal value at idx i
+        g = goal_state.state[i]
+        # x coord of g
+        g_x = i % 3
+        # y coord of g
+        g_y = int(i / 3)
+
+        # loo
+        for j in range(0, 9):
+            s = state.state[j]
+            # check if s and g are equal
+            # if they are calculate the distance between the two
+            if s == g:
+                # if the indicies are the same, s is in the correct position
+                # so save some cpu cycles and memory by breaking early
+                if i == j:
+                    sum += 0
+                    break
+                # calculate coordinates of s
+                s_x = j % 3
+                s_y = int(j / 3)
+                # calculate cost
+                sum += math.abs(g_x - s_x) + math.abs(g_y - s_y)
+            else:
+                continue
+
+    return sum

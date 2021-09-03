@@ -7,12 +7,15 @@ import math
 import random
 from enum import Enum, unique
 
+from collections import Set
+from puzzle_agent import PuzzleAgent, State
+
 def run(filename: str):
     f = open(filename, 'r')
     lines = f.readlines()
     f.close()
 
-    state = State()
+    agent = PuzzleAgent()
     
     for (i, line) in enumerate(lines):
         sp = line.split(' ')
@@ -20,16 +23,15 @@ def run(filename: str):
 
         if cmd == "setState":
             state_str = sp[1] + sp[2] + sp[3]
-            state.set_state(state_str)
         elif cmd == "printState":
-            print(state)
+            agent.print_state()
         elif cmd == "move":
             direction_str = sp[1]
             direction = Direction[direction_str]
             state.move(direction)
         elif cmd == "randomizeState":
             n = int(sp[1])
-            state.randomize_state(n)
+            agent.randomize_state(n)
         elif cmd == "solve":
             method = sp[1]
             if method == "A-star":
