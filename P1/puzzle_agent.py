@@ -1,14 +1,14 @@
 from typing import *
 
 from generic_agent import GenericAgent, GenericState, GenericAction
-from algos import a_star, SearchAlgoReturn
+from algos import a_star, beam_search, SearchResult
 
 
 class PuzzleState(GenericState):
 
     def __init__(self, state: List[int], blank_idx: int):
         assert len(state) == 9
-        assert blank_idx >= 0 and blank_idx < 9
+        assert 0 <= blank_idx < 9
 
         self.data = state
         self.blank_idx = blank_idx
@@ -77,7 +77,7 @@ class PuzzleAgent(GenericAgent[PuzzleState, PuzzleAction]):
             d_idx = -3
         elif action == PuzzleAction.Down:
             if on_bottom:
-                return  None
+                return None
             d_idx = 3
         elif action == PuzzleAction.Left:
             if on_left:
@@ -97,8 +97,11 @@ class PuzzleAgent(GenericAgent[PuzzleState, PuzzleAction]):
         new_state[idx], new_state[new_idx] = new_state[new_idx], new_state[idx]
         return PuzzleState(new_state, new_idx)
 
-    def a_star(self, hueristic: Callable[[PuzzleState, PuzzleState], int]) -> SearchAlgoReturn:
+    def a_star(self, hueristic: Callable[[PuzzleState, PuzzleState], int]) -> SearchResult:
         return a_star(self, self.goal_state, hueristic)
+
+    def beam_search(self, k: int, hueristic: Callable[[PuzzleState, PuzzleState], int]) -> SearchResult:
+        return beam_search(self, self.goal_state, k, hueristic)
 
 
 

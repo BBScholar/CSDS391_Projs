@@ -1,5 +1,7 @@
 printState
 randomizeState 100
 printState
-maxNodes 1000
+maxNodes 10000
 solve A-star h1
+solve A-star h2
+solve beam 2

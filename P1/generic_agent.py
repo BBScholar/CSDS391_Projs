@@ -1,4 +1,5 @@
 from typing import *
+from typing import Final
 from enum import Enum
 from abc import abstractmethod
 

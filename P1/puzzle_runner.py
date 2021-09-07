@@ -72,13 +72,11 @@ def run(filename: str):
                     print("Invalid hueristic ({})".format(hueristic_str))
                     exit(1)
 
-                moves, actions = agent.a_star(h)
-                actions = [action.name for action in actions]
-                print("Solution found!\nMoves: {}\nActions: {}".format(moves, str(actions)))
+                result = agent.a_star(h)
+                print(str(result))
             elif method == "beam":
-
-                moves, actions = agent.beam(int(sp[2]))
-                print("Solution found!\nMoves: {}\nActions: {}".format(moves, str(actions)))
+                result = agent.beam_search(int(sp[2]), h1_hueristic)
+                print(str(result))
             else:
                 print("Invalid solve method ({}) on line {}.".format(method, i))
                 exit(1)

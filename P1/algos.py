@@ -2,6 +2,7 @@
 
 from typing import *
 from dataclasses import dataclass, field
+from time import time_ns
 
 from lib.priority_queue import PriorityQueue
 
@@ -29,7 +30,7 @@ class SearchResult(Generic[State, Action]):
     def __str__(self) -> str:
         s = ""
         if self.success:
-            actions = [str(action) for action in self.actions]
+            actions = [action.name for action in self.actions]
             s += "Result: Success\n"
             s += f"Moves to goal: {self.moves}\n"
             s += f"Moves: {str(actions)}\n"
@@ -61,6 +62,7 @@ def collect_all_actions(final_node: SearchNode[State, Action]) -> List[Action]:
     return actions
 
 def a_star(agent: GenericAgent[State, Action], goal: State, hueristic: Callable[[State, State], int]) -> SearchResult:
+    start_time_ns = time_ns()
     frontier = PriorityQueue[SearchNode]()
     lut: Dict[State, SearchNode] = {}
     nodes_considered: int = 0
@@ -82,10 +84,10 @@ def a_star(agent: GenericAgent[State, Action], goal: State, hueristic: Callable[
 
         if current_state == goal:
             actions = collect_all_actions(current_node)
-            return SearchResult(True, nodes_considered, 0, actions, len(actions))
+            return SearchResult(True, nodes_considered, time_ns() - start_time_ns, actions, len(actions))
         elif nodes_considered >= agent.max_nodes:
             print("[ERROR] Max nodes reached, aborting search")
-            return SearchResult(False, nodes_considered, 0)
+            return SearchResult(False, nodes_considered, time_ns() - start_time_ns)
 
         for action, state in agent.expand_state(current_state):
             new_depth = current_depth + 1
@@ -96,32 +98,45 @@ def a_star(agent: GenericAgent[State, Action], goal: State, hueristic: Callable[
                 lut[state] = SearchNode(state=state, action=action, parent=current_node, cost=new_cost, depth=new_depth)
                 frontier.push(lut[state])
 
-    return SearchResult(False, nodes_considered, 0)
+    return SearchResult(False, nodes_considered, time_ns() - start_time_ns)
 
-def beam_search(agent: GenericAgent[State, Action], goal: State, k: int) -> SearchResult:
+def beam_search(agent: GenericAgent[State, Action], goal: State, k: int, hueristic: Callable[[State, State], int]) -> SearchResult:
+    start_time_ns = time_ns()
     frontier: List[SearchNode] = []
     lut: Dict[State, SearchNode] = {}
-
     nodes_considered = 0
 
+
+    initial_state = agent.state
+    initial_node = SearchNode[State, Action](state=initial_state, depth=0, cost=hueristic(initial_state, goal))
+
+    frontier.append(initial_node)
+    lut[initial_state] = initial_node
+
     while len(frontier) > 0:
-        current_node = frontier.pop()
+        current_node = frontier.pop(0)
         current_state = current_node.state
 
         nodes_considered += 1
 
         if current_node.state == goal:
             actions = collect_all_actions(current_node)
-            return len(actions), actions
+            return SearchResult(True, nodes_considered, time_ns() - start_time_ns, actions, len(actions))
         elif nodes_considered >= agent.max_nodes:
-            return None
+            return SearchResult(False, nodes_considered, time_ns() - start_time_ns)
 
         for action, state in agent.expand_state(current_state):
-            pass
+            new_depth = current_node.depth + 1
+            new_cost = new_depth + hueristic(goal, state) # FIXME
+
+            if lut.get(state) is None or new_cost < lut[state].cost:
+                lut[state] = SearchNode(state=state, action=action, parent=current_node, cost=new_cost, depth=new_depth)
+                frontier.append(lut[state])
 
         # trim the statespace by only keeping the k 'best' states in the frontier
+        # this operation is kLogk runtime in the worstcase (python uses "Tim sort")
         frontier.sort()
         if len(frontier) > k:
             frontier = frontier[:k]
 
-    return None
+    return SearchResult(False, nodes_considered, time_ns() - start_time_ns)
