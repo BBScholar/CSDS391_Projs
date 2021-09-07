@@ -1,8 +1,6 @@
-#!/usr/bin/python3
-
 
 from dataclasses import dataclass, field
-from typing import Generic, Type, TypeVar, Tuple, List
+from typing import Generic, Type, TypeVar, Tuple, List, Optional
 import heapq
 
 T = TypeVar('T')
@@ -14,14 +12,14 @@ class PriorityQueue(Generic[T]):
         self.data = []
        
     def push(self, value: T):
-        heapq.heappush(value)
+        heapq.heappush(self.data, value)
 
-    def peak(self) -> T:
+    def peak(self) -> Optional[T]:
         if self.is_empty():
             return None
         return self.data[0]
 
-    def pop(self) -> T:
+    def pop(self) -> Optional[T]:
         if self.is_empty():
             return None
         return heapq.heappop(self.data)
@@ -31,3 +29,6 @@ class PriorityQueue(Generic[T]):
     
     def has_value(self) -> bool:
         return not self.is_empty()
+
+    def __len__(self) -> int:
+        return len(self.data)

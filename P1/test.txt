@@ -1,0 +1,5 @@
+printState
+randomizeState 100
+printState
+maxNodes 1000
+solve A-star h1
